@@ -1,0 +1,24 @@
+server:
+  port: ${SERVER_PORT:8081}
+spring:
+  application:
+    name: workflow-center
+  profiles:
+    active: dev
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./workflow-center-app/data/workflow-center;MODE=MYSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+workflow-center:
+  security:
+    internal-token: ${WORKFLOW_CENTER_SECURITY_INTERNAL_TOKEN:change-me-in-prod}
+logging:
+  level:
+    root: INFO
+    com.company.workflow: INFO

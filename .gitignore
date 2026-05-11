@@ -1,0 +1,8 @@
+.target/
+.idea/
+*.iml
+*.log
+logs/
+workflow-center-app/target/
+workflow-center-common/target/
+workflow-center-app/data/

@@ -1,0 +1,4 @@
+企业智能管理平台是vue+java+python的，所以有两个后端
+
+前端代码：D:\webStormProjects\workSpace06
+python后端代码：D:\pyCharmProjects\workSpace03
