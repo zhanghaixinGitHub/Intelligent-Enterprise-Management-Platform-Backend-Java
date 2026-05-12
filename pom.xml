@@ -7,7 +7,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>workflow-center-parent</name>
-    <description>鏅鸿兘浼佷笟绠＄悊骞冲彴 Java 瀹℃壒涓庝紒涓氱骇鍚庡彴鍩虹宸ョ▼</description>
+    <description>智能企业管理平台 Java 企业级后端工程</description>
     <modules>
         <module>workflow-center-common</module>
         <module>workflow-center-app</module>
@@ -20,6 +20,7 @@
         <spring.boot.version>2.2.5.RELEASE</spring.boot.version>
         <hutool.version>5.8.5</hutool.version>
         <lombok.version>1.18.32</lombok.version>
+        <flowable.version>6.8.0</flowable.version>
     </properties>
     <dependencyManagement>
         <dependencies>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://www.company.com/workflow">
+
+    <!--
+        最小可运行审批流定义。
+        业务意图：
+        1. 先让 Java 审批中心具备真实可流转的流程，而不是只有空接口；
+        2. 通过显式的 managerAssignee / hrAssignee 变量，降低接入早期的组织架构依赖；
+        3. 主管审批节点通过 approved 变量驱动条件网关，为后续扩展金额、部门、请假天数等复杂条件打基础。
+    -->
+    <process id="leaveApproval" name="通用请假审批流程" isExecutable="true">
+        <startEvent id="startEvent" name="开始"/>
+        <sequenceFlow id="flow_start_to_manager" sourceRef="startEvent" targetRef="managerApproveTask"/>
+
+        <userTask id="managerApproveTask" name="直属主管审批" flowable:assignee="${managerAssignee}"/>
+        <sequenceFlow id="flow_manager_to_gateway" sourceRef="managerApproveTask" targetRef="approveGateway"/>
+
+        <exclusiveGateway id="approveGateway" name="审批结果判断"/>
+        <sequenceFlow id="flow_gateway_to_hr" sourceRef="approveGateway" targetRef="hrRecordTask">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved == true}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flow_gateway_to_reject_end" sourceRef="approveGateway" targetRef="rejectEndEvent">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved == false}]]></conditionExpression>
+        </sequenceFlow>
+
+        <userTask id="hrRecordTask" name="HR备案" flowable:assignee="${hrAssignee}"/>
+        <sequenceFlow id="flow_hr_to_pass_end" sourceRef="hrRecordTask" targetRef="passEndEvent"/>
+
+        <endEvent id="passEndEvent" name="审批通过结束"/>
+        <endEvent id="rejectEndEvent" name="审批驳回结束"/>
+    </process>
+</definitions>
+

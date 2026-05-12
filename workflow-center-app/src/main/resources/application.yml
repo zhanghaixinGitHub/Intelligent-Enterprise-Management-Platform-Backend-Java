@@ -1,5 +1,10 @@
 server:
   port: ${SERVER_PORT:8081}
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 spring:
   application:
     name: workflow-center
@@ -10,6 +15,10 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./workflow-center-app/data/workflow-center;MODE=MYSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+flowable:
+  database-schema-update: true
+  check-process-definitions: true
+  async-executor-activate: false
 management:
   endpoints:
     web:
