@@ -12,13 +12,21 @@ spring:
     active: dev
   datasource:
     driver-class-name: org.h2.Driver
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./workflow-center-app/data/workflow-center;MODE=MYSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    url: jdbc:h2:file:./workflow-center-app/data/workflow-center;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  sql:
+    init:
+      mode: never
 flowable:
   database-schema-update: true
   check-process-definitions: true
   async-executor-activate: false
+  database-type: h2
 management:
   endpoints:
     web:

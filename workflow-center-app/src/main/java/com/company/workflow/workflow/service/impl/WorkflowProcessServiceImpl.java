@@ -50,11 +50,14 @@ public class WorkflowProcessServiceImpl implements WorkflowProcessService {
 
     @Override
     public List<ProcessDefinitionSummaryResponse> listLatestProcessDefinitions() {
-        List<ProcessDefinition> definitions = repositoryService.createProcessDefinitionQuery()
-            .latestVersion()
-            .active()
-            .orderByProcessDefinitionKey()
-            .asc()
+        //repositoryService 是Flowable 引擎的核心服务之一
+        //RepositoryService 专门负责管理流程定义（Process Definition），也就是 BPMN 流程文件的元数据
+        //它底层会自动操作 Flowable 自己的数据库表（比如 ACT_RE_PROCDEF 等表）
+        List<ProcessDefinition> definitions = repositoryService.createProcessDefinitionQuery() //创建一个流程定义查询对象（类似 MyBatis 的 QueryWrapper）
+            .latestVersion() //只查每个流程的最新版本（如果同一个流程部署了多次，只取版本号最大的）
+            .active() //只查激活状态的流程（排除已挂起/暂停的流程）
+            .orderByProcessDefinitionKey() //按流程定义的 key 排序
+            .asc() //按升序排序
             .list();
 
         log.info("WorkflowProcessServiceImpl.listLatestProcessDefinitions   >>>   查询流程定义完成，count={}", definitions.size());
