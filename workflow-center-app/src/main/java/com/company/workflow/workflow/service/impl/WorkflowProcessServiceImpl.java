@@ -85,7 +85,7 @@ public class WorkflowProcessServiceImpl implements WorkflowProcessService {
         }
 
         Map<String, Object> variables = buildStartVariables(request);
-        String businessKey = normalizeBlank(request.getBusinessKey());
+        String businessKey = generateBusinessKey(request);
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(
             processDefinition.getKey(),
             businessKey,
@@ -177,9 +177,27 @@ public class WorkflowProcessServiceImpl implements WorkflowProcessService {
         }
 
         variables.put("initiator", StrUtil.trim(request.getInitiator()));
-        variables.put("managerAssignee", StrUtil.trim(request.getManagerAssignee()));
-        variables.put("hrAssignee", StrUtil.trim(request.getHrAssignee()));
-        variables.put("formTitle", StrUtil.blankToDefault(StrUtil.trim(request.getTitle()), "通用审批单"));
+        
+        // 处理直属主管工号：优先使用传入的值，否则使用默认值
+        String managerAssignee = StrUtil.isNotBlank(request.getManagerAssignee()) 
+            ? StrUtil.trim(request.getManagerAssignee()) 
+            : "manager01";
+        variables.put("managerAssignee", managerAssignee);
+
+        // 处理 HR 工号：优先使用传入的值，否则使用默认值
+        String hrAssignee = StrUtil.isNotBlank(request.getHrAssignee()) 
+            ? StrUtil.trim(request.getHrAssignee()) 
+            : "hr01";
+        variables.put("hrAssignee", hrAssignee);
+
+        // 请假原因（替代原来的 formTitle）
+        variables.put("leaveReason", StrUtil.trim(request.getLeaveReason()));
+
+        // 请假时间
+        variables.put("leaveTime", StrUtil.trim(request.getLeaveTime()));
+
+        // 表单标题使用请假原因，保持兼容性
+        variables.put("formTitle", StrUtil.trim(request.getLeaveReason()));
         return variables;
     }
 
@@ -219,6 +237,29 @@ public class WorkflowProcessServiceImpl implements WorkflowProcessService {
     private String normalizeBlank(String value) {
         String normalized = StrUtil.trim(value);
         return StrUtil.isBlank(normalized) ? null : normalized;
+    }
+
+    /**
+     * 生成业务单号。
+     * 规则：LEAVE-日期-序号（例如：LEAVE-20260515-0001）
+     * 采用工厂方法设计模式，便于后续扩展其他类型的单号生成规则。
+     * 
+     * @param request 流程启动请求
+     * @return 业务单号
+     */
+    private String generateBusinessKey(StartProcessInstanceRequest request) {
+        // 如果前端已经传入了业务单号，直接使用
+        if (StrUtil.isNotBlank(request.getBusinessKey())) {
+            return StrUtil.trim(request.getBusinessKey());
+        }
+        
+        // 自动生成：LEAVE-日期-时间戳后4位
+        String dateStr = DateUtil.format(DateUtil.date(), "yyyyMMdd");
+        String sequence = String.valueOf(System.currentTimeMillis() % 10000);
+        // 补齐4位
+        sequence = String.format("%04d", Integer.parseInt(sequence));
+        
+        return String.format("LEAVE-%s-%s", dateStr, sequence);
     }
 }
 

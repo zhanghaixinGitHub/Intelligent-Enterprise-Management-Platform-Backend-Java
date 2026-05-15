@@ -23,23 +23,38 @@ public class StartProcessInstanceRequest {
     @NotBlank(message = "发起人不能为空")
     private String initiator;
 
-    @NotBlank(message = "主管审批人不能为空")
+    /**
+     * 直属主管工号（可选）。
+     * 如果未传入，系统将使用默认值 "manager01"。
+     */
     private String managerAssignee;
 
-    @NotBlank(message = "HR 办理人不能为空")
+    /**
+     * HR 办理人工号（可选）。
+     * 如果未传入，系统将使用默认值 "hr01"。
+     */
     private String hrAssignee;
 
     /**
      * 业务单号可选。
      * 企业项目里建议传业务单号，便于把流程实例和业务主表做稳定关联。
+     * 如果未传入，系统将自动生成格式为 LEAVE-日期-序号 的业务单号。
      */
     private String businessKey;
 
     /**
-     * 表单标题可选。
-     * 当前作为流程变量保存，方便后续待办列表直接展示摘要信息。
+     * 请假原因（必填）。
+     * 替代原来的表单标题字段，作为流程变量保存，方便后续待办列表直接展示摘要信息。
      */
-    private String title;
+    @NotBlank(message = "请假原因不能为空")
+    private String leaveReason;
+
+    /**
+     * 请假时间（必填）。
+     * 用于记录请假的具体时间信息。
+     */
+    @NotBlank(message = "请假时间不能为空")
+    private String leaveTime;
 
     /**
      * 扩展流程变量。
