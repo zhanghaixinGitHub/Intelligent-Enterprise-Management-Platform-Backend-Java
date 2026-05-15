@@ -7,6 +7,7 @@ import com.company.workflow.workflow.model.response.ProcessDefinitionSummaryResp
 import com.company.workflow.workflow.model.response.ProcessStartResponse;
 import com.company.workflow.workflow.model.response.TaskOperationResponse;
 import com.company.workflow.workflow.model.response.TaskSummaryResponse;
+import com.company.workflow.workflow.model.response.WorkflowRequestDTO;
 import com.company.workflow.workflow.service.WorkflowProcessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +56,9 @@ public class WorkflowProcessController {
     }
 
     @GetMapping("/tasks")
-    public ApiResponse<List<TaskSummaryResponse>> listUserTasks(@RequestParam @NotBlank(message = "办理人不能为空") String assignee) {
+    public ApiResponse<List<TaskSummaryResponse>> listUserTasks(
+        @RequestParam(value = "assignee") @NotBlank(message = "办理人不能为空") String assignee
+    ) {
         log.info("WorkflowProcessController.listUserTasks   >>>   收到查询待办请求，assignee={}", assignee);
         return ApiResponse.success(workflowProcessService.listUserTasks(assignee));
     }
@@ -67,6 +70,14 @@ public class WorkflowProcessController {
     ) {
         log.info("WorkflowProcessController.completeTask   >>>   收到完成任务请求，taskId={}, operatorId={}", taskId, request.getOperatorId());
         return ApiResponse.success(workflowProcessService.completeTask(taskId, request));
+    }
+
+    @GetMapping("/requests")
+    public ApiResponse<List<WorkflowRequestDTO>> getUserRequests(
+        @RequestParam(value = "initiator") @NotBlank(message = "发起人不能为空") String initiator
+    ) {
+        log.info("WorkflowProcessController.getUserRequests   >>>   收到查询用户发起的流程请求列表，initiator={}", initiator);
+        return ApiResponse.success(workflowProcessService.getUserRequests(initiator));
     }
 }
 

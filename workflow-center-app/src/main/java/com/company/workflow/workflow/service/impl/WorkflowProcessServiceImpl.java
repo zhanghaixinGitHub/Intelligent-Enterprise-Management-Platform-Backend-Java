@@ -10,12 +10,15 @@ import com.company.workflow.workflow.model.response.ProcessDefinitionSummaryResp
 import com.company.workflow.workflow.model.response.ProcessStartResponse;
 import com.company.workflow.workflow.model.response.TaskOperationResponse;
 import com.company.workflow.workflow.model.response.TaskSummaryResponse;
+import com.company.workflow.workflow.model.response.WorkflowRequestDTO;
 import com.company.workflow.workflow.service.WorkflowProcessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
+import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
@@ -47,6 +50,7 @@ public class WorkflowProcessServiceImpl implements WorkflowProcessService {
     private final RepositoryService repositoryService;
     private final RuntimeService runtimeService;
     private final TaskService taskService;
+    private final HistoryService historyService;
 
     @Override
     public List<ProcessDefinitionSummaryResponse> listLatestProcessDefinitions() {
@@ -260,6 +264,78 @@ public class WorkflowProcessServiceImpl implements WorkflowProcessService {
         sequence = String.format("%04d", Integer.parseInt(sequence));
         
         return String.format("LEAVE-%s-%s", dateStr, sequence);
+    }
+
+    @Override
+    public List<WorkflowRequestDTO> getUserRequests(String initiator) {
+        log.info("WorkflowProcessServiceImpl.getUserRequests   >>>   查询用户发起的流程请求列表, initiator={}", initiator);
+        
+        // 1. 查询所有历史流程实例（不过滤发起人，因为 startedBy 查询的是 startUserId，不是流程变量）
+        List<HistoricProcessInstance> allInstances = historyService.createHistoricProcessInstanceQuery()
+                .orderByProcessInstanceStartTime()
+                .desc()
+                .list();
+        
+        // 2. 过滤出指定发起人的流程实例，并转换为 DTO
+        String targetInitiator = StrUtil.trim(initiator);
+        List<WorkflowRequestDTO> result = allInstances.stream()
+                .filter(instance -> {
+                    // 从流程变量中获取 initiator 进行过滤
+                    Map<String, Object> variables = instance.getProcessVariables();
+                    Object initiatorVar = variables.get("initiator");
+                    return initiatorVar != null && StrUtil.equals(StrUtil.trim(initiatorVar.toString()), targetInitiator);
+                })
+                .map(instance -> {
+                    WorkflowRequestDTO dto = new WorkflowRequestDTO();
+                    dto.setProcessInstanceId(instance.getId());
+                    dto.setProcessDefinitionKey(instance.getProcessDefinitionKey());
+                    dto.setProcessDefinitionName(instance.getProcessDefinitionName());
+                    dto.setBusinessKey(instance.getBusinessKey());
+                    dto.setProcessStatus(getProcessStatus(instance));
+                    dto.setStartTime(instance.getStartTime() != null ? 
+                        DateUtil.format(instance.getStartTime(), DatePattern.NORM_DATETIME_PATTERN) : null);
+                    
+                    // 获取当前活动任务
+                    List<Task> activeTasks = taskService.createTaskQuery()
+                            .processInstanceId(instance.getId())
+                            .list();
+                    List<String> taskNames = activeTasks.stream()
+                            .map(Task::getName)
+                            .collect(Collectors.toList());
+                    dto.setCurrentTaskNames(taskNames);
+                    
+                    // 判断是否可撤回（只有审批中的流程可以撤回）
+                    dto.setCanRevoke("RUNNING".equals(dto.getProcessStatus()));
+                    
+                    // 从流程变量中获取标题（优先使用 leaveReason，其次使用 formTitle）
+                    Map<String, Object> variables = instance.getProcessVariables();
+                    if (variables.containsKey("leaveReason")) {
+                        dto.setTitle((String) variables.get("leaveReason"));
+                    } else if (variables.containsKey("formTitle")) {
+                        dto.setTitle((String) variables.get("formTitle"));
+                    }
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        
+        log.info("WorkflowProcessServiceImpl.getUserRequests   >>>   查询到 {} 条流程请求记录", result.size());
+        return result;
+    }
+
+    /**
+     * 获取流程状态。
+     *
+     * @param instance 历史流程实例
+     * @return 流程状态（RUNNING: 运行中, COMPLETED: 已完成）
+     */
+    private String getProcessStatus(HistoricProcessInstance instance) {
+        if (instance.getEndTime() != null) {
+            // 已结束的流程
+            return "COMPLETED";
+        }
+        // 运行中的流程
+        return "RUNNING";
     }
 }
 
