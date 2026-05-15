@@ -6,3 +6,17 @@ logs/
 workflow-center-app/target/
 workflow-center-common/target/
 workflow-center-app/data/
+
+# Additional ignores
+*.class
+*.jar
+*.war
+*.ear
+package-lock.json
+*.tsbuildinfo
+.env
+.env.local
+!.env.example
+.vscode/
+.DS_Store
+Thumbs.db
